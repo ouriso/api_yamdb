@@ -5,13 +5,20 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
-# импортируем ViewSets
-# from .views import 
+from .views import CommentViewSet, ReviewViewSet
 
 
 router = DefaultRouter()
-
-# регистрируем свои роутеры
+router.register(
+    'titles/(?P<title_id>[0-9]+)/reviews',
+    ReviewViewSet,
+    basename='title-reviews'
+)
+router.register(
+    'titles/(?P<title_id>[0-9]+)/reviews/(?P<review_id>[0-9]+)/comments',
+    CommentViewSet,
+    basename='review-comments'
+)
 
 
 urlpatterns = [
