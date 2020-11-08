@@ -1,7 +1,12 @@
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
+from django.utils.crypto import get_random_string
 
-from rest_framework import generics, permissions, viewsets
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import PageNumberPagination
 
@@ -14,6 +19,22 @@ from .serializers import (
 
 User = get_user_model()
 
+@api_view(['POST'])
+def user_auth_view(request):
+    if 'email' not in request.data or not request.data['email']:
+        return Response({"message": "email должен быть введен"}, status=status.HTTP_400_BAD_REQUEST)
+    email = request.data['email']
+    if User.objects.filter(email=email).exists():
+        return Response({"message": "такой email уже существует"}, status=status.HTTP_400_BAD_REQUEST)
+    password = get_random_string(length=20)
+    user = User.objects.create(email=email, password=password)
+    user.email_user(
+        subject='Registration',
+        message=f'confirmation_code: {password}',
+        from_email='from@example.com'
+    )
+    return Response(status=status.HTTP_200_OK)
+
 
 class UserViewSet(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
@@ -24,7 +45,7 @@ class UserViewSet(generics.RetrieveUpdateAPIView):
 
 
 class UsersViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('username')
     lookup_field = 'username'
     serializer_class = UserSerializer
     filter_backends = [SearchFilter]
