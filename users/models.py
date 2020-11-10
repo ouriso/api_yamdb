@@ -11,10 +11,10 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError('The given email must be set')
         email = self.normalize_email(email)
-        # print(username)
+
         # if username is None:
         #     username = str(email).split('@')[0]
-        # else:            
+        # else:
         #     username = self.model.normalize_username(username)
 
         user = self.model(username=username, email=email, **extra_fields)
@@ -46,7 +46,7 @@ class User(AbstractUser):
         ADMIN = 'admin'
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ['username']
 
     email = models.EmailField(_('email address'), unique=True)
     bio = models.TextField(max_length=500, blank=True)

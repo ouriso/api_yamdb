@@ -31,7 +31,7 @@ def user_auth_view(request):
         return Response({"message": "такой email уже существует"}, status=status.HTTP_400_BAD_REQUEST)
     password = get_random_string(length=20)
     username = str(email).split('@')[0]
-    user = User.objects.create(username=username, email=email, password=password)
+    user = User.objects.create_user(username=username, email=email, password=password)
     user.email_user(
         subject='Registration',
         message=f'confirmation_code: {password}',
@@ -58,7 +58,7 @@ def user_token_view(request):
 
 class UserViewSet(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
-    # permission_classes = [IsAuthenticatedOrReadOnly & IsAuthorOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
     # def get_queryset(self):
     #     queryset = User.objects.all()
 
