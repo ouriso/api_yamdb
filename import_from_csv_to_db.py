@@ -3,6 +3,7 @@ import sqlite3
 import datetime as dt
 import os
 
+from users.models import User
 
 to_datetime = lambda date_string: dt.datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S.%fZ')
 
@@ -26,6 +27,22 @@ FILE_NAME_BY_MODEL_NAME = {
     'review': 'review.csv',
     'comment': 'comments.csv',
 }
+
+
+def import_users():
+    file_name = FILE_NAME_BY_MODEL_NAME['user']
+    data_file = os.path.abspath(f'data/{file_name}')
+    with open(data_file, 'r', encoding='utf-8') as f:
+        dr = csv.DictReader(f, quoting=csv.QUOTE_MINIMAL)
+        fieldnames = dr.fieldnames
+
+        for row in dr:
+            data = {}
+            for name in fieldnames:
+                convert_func = FIELD_TYPES_BY_MODEL_NAME['user'].get(name, str)
+                data[name] = convert_func(row[name])
+
+            User.objects.create_user(**data)
 
 
 def import_data_from_csv_to_db(model_name):
@@ -63,5 +80,8 @@ def import_data_from_csv_to_db(model_name):
 
 
 if __name__ == '__main__':
+    import_users()
     for model_name in FIELD_TYPES_BY_MODEL_NAME.keys():
+        if model_name == 'user':
+            continue
         import_data_from_csv_to_db(model_name)
