@@ -1,13 +1,18 @@
 import csv
 import sqlite3
+import datetime as dt
 import os
 
+from functools import partial
+
+to_datetime = partial(dt.datetime.strptime, format='%Y-%m-%dT%H:%M:%S.%fZ')
 
 DB_NAME = "db.sqlite3"
-# with open(os.path.abspath(r'data/titles.csv'), 'r', encoding='utf-8') as f:
-#     dr = csv.DictReader(f)
-#     for row in dr:
-#         Title.objects.create(**row)
+FIELD_TYPES = {
+    'users': {'id': int},
+    'titles': {'id': int, 'category_id': int, 'year': int},
+    'review': {'id': int, 'title_id': int, 'author_id': int, 'score': int, 'pub_date': to_datetime}
+}
 
 
 def import_data_from_csv_to_db(file_name, model_name):
