@@ -1,7 +1,5 @@
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-<<<<<<< HEAD
 from .models import Category, Comment, Genre, Review, Title
 
 
@@ -46,41 +44,28 @@ class TitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = '__all__'
         read_only_fields = ('rating',)
-=======
-# from .models import Comment, Review
->>>>>>> master
 
 
-User = get_user_model()
-
-
-class UserSerializer(serializers.ModelSerializer):
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True,
+        default=serializers.CurrentUserDefault()
+    )
 
     class Meta:
-        model = User
-        fields = ('first_name', 'last_name', 'username', 'bio', 'role', 'email')
+        model = Comment
+        fields = ('id', 'text', 'author', 'pub_date')
 
 
-# class CommentSerializer(serializers.ModelSerializer):
-#     author = serializers.SlugRelatedField(
-#         slug_field='username',
-#         read_only=True,
-#         default=serializers.CurrentUserDefault()
-#     )
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True,
+        default=serializers.CurrentUserDefault()
+    )
+    score = serializers.IntegerField(source='score', min_value=1, max_value=10)
 
-#     class Meta:
-#         model = Comment
-#         fields = ('id', 'text', 'author', 'pub_date')
-
-
-# class ReviewSerializer(serializers.ModelSerializer):
-#     author = serializers.SlugRelatedField(
-#         slug_field='username',
-#         read_only=True,
-#         default=serializers.CurrentUserDefault()
-#     )
-#     score = serializers.IntegerField(source='score', min_value=1, max_value=10)
-
-#     class Meta:
-#         model = Review
-#         fields = ('id', 'text', 'author', 'score', 'pub_date')
+    class Meta:
+        model = Review
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
