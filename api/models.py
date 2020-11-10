@@ -50,7 +50,7 @@ class Review(models.Model):
     pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('author', 'title')
+        # unique_together = ('author', 'title')
         constraints = [
             models.CheckConstraint(
                 check=models.Q(score__gte=1) & models.Q(score__lte=10),
