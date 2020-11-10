@@ -60,7 +60,7 @@ def user_token_view(request):
 
 class UserViewSet(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
-    # permission_classes = [IsAuthenticatedOrReadOnly & IsAuthorOrReadOnly]
+    # permission_classes = [IsAuthenticated]
     # def get_queryset(self):
     #     queryset = User.objects.all()
 
