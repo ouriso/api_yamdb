@@ -1,39 +1,49 @@
-from django.contrib.auth import get_user_model
-from rest_framework import serializers
+import json
 
-# from .models import Comment, Review
+from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth.models import BaseUserManager
+from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 
 
 User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'username', 'bio', 'role', 'email')
 
 
-# class CommentSerializer(serializers.ModelSerializer):
-#     author = serializers.SlugRelatedField(
-#         slug_field='username',
-#         read_only=True,
-#         default=serializers.CurrentUserDefault()
-#     )
+class AuthSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True, write_only=True)
+    confirmation_code = serializers.CharField(required=True, max_length=20, write_only=True)
 
-#     class Meta:
-#         model = Comment
-#         fields = ('id', 'text', 'author', 'pub_date')
+    # def validate(self, data):
+    #     email = data.get('email', None)
+    #     confirmation_code = data.get('confirmation_code', None)
 
+    #     if email is None:
+    #         raise serializers.ValidationError(
+    #             'An email address is required'
+    #         )
 
-# class ReviewSerializer(serializers.ModelSerializer):
-#     author = serializers.SlugRelatedField(
-#         slug_field='username',
-#         read_only=True,
-#         default=serializers.CurrentUserDefault()
-#     )
-#     score = serializers.IntegerField(source='score', min_value=1, max_value=10)
+    #     if confirmation_code is None:
+    #         raise serializers.ValidationError(
+    #             'A confirmation_code is required'
+    #         )
+    #     # print(f'email: {email}; conf: {confirmation_code}')
+    #     # user = authenticate(email=email, password=confirmation_code)
 
-#     class Meta:
-#         model = Review
-#         fields = ('id', 'text', 'author', 'score', 'pub_date')
+    #     # if user is None:
+    #     #     raise serializers.ValidationError(
+    #     #         'A user with this email and password was not found.'
+    #     #     )
+
+    #     # if not user.is_active:
+    #     #     raise serializers.ValidationError(
+    #     #         'This user has been deactivated.'
+    #     #     )
+
+    #     return data
