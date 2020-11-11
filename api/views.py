@@ -59,7 +59,7 @@ def user_token_view(request):
 
 class UserViewSet(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = (permissions.IsAuthenticated,)
 
     def get_object(self):
         return self.request.user
@@ -72,5 +72,4 @@ class UsersViewSet(viewsets.ModelViewSet):
     filter_backends = [SearchFilter]
     search_fields = ['username',]
     pagination_class = PageNumberPagination
-    permission_classes = (permissions.IsAuthenticated,
-                          IsAdmin,)
+    permission_classes = (IsAdmin,)
