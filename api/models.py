@@ -58,6 +58,13 @@ class Review(models.Model):
             )
         ]
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        reviews = self.title.reviews
+        new_rating = sum(review.score for review in reviews.all()) / reviews.count()
+        self.title.rating = new_rating
+        self.title.save(update_fields=['rating'])
+
 
 class Comment(models.Model):
     review = models.ForeignKey(Review, on_delete=models.CASCADE,

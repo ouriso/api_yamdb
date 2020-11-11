@@ -1,6 +1,7 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
-from .models import Category, Comment, Genre, Review, Title
+from .models import Category, Comment, Genre, Review, Title, User
 
 
 class CustomSlugRelatedField(serializers.SlugRelatedField):
@@ -64,8 +65,33 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True,
         default=serializers.CurrentUserDefault()
     )
-    score = serializers.IntegerField(source='score', min_value=1, max_value=10)
+    score = serializers.IntegerField(min_value=1, max_value=10)
 
     class Meta:
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
+
+    def validate(self, attrs):
+        if self.context['request'].method != 'POST':
+            return attrs
+        author = self.context['request'].user
+        title_id = self.context['view'].kwargs['title_id']
+
+        title = get_object_or_404(Title, pk=title_id)
+        if Review.objects.filter(title=title, author=author).exists():
+            mes = ('Review from author {author.username} on title {title.name}'
+                   '{title.year}) already exists')
+            raise serializers.ValidationError(mes)
+        return attrs
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'username', 'bio', 'role', 'email')
+
+
+class AuthSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True, write_only=True)
+    confirmation_code = serializers.CharField(required=True, max_length=20,
+                                              write_only=True)

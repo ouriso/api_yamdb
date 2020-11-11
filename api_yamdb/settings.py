@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    # 'django_filters',
+    'django_filters',
     'api',
     'users',
 ]
@@ -132,8 +132,8 @@ STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static/'),)
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-        # 'rest_framework.permissions.AllowAny',
+        # 'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
