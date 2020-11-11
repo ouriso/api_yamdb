@@ -18,3 +18,4 @@ __pycache__/
 media/
 
 db.sqlite3
+import_from_csv_to_db.py

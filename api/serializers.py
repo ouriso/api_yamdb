@@ -7,25 +7,18 @@ from .models import Category, Comment, Genre, Review, Title
 User = get_user_model()
 
 
-class CustomSlugRelatedField(serializers.SlugRelatedField):
-    def __init__(self, slug_field=None, serializer_for_object=None, **kwargs):
-        super().__init__(slug_field, **kwargs)
-        self.serializer_for_object = serializer_for_object
-
-    def to_representation(self, obj):
-        serializer = self.serializer_for_object(instance=obj)
-        return serializer.to_representation(obj)
-
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'username', 'bio', 'role', 'email')
+        fields = ('first_name', 'last_name',
+                  'username', 'bio', 'role', 'email')
 
 
 class AuthSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True, write_only=True)
-    confirmation_code = serializers.CharField(required=True, max_length=20, write_only=True)
+    confirmation_code = serializers.CharField(
+        required=True, max_length=20, write_only=True
+    )
 
 
 class CustomSlugRelatedField(serializers.SlugRelatedField):

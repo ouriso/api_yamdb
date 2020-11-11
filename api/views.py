@@ -12,11 +12,12 @@ from rest_framework.filters import SearchFilter
 from rest_framework.pagination import PageNumberPagination
 
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .filters import TitleFilter
-from .models import Category, Genre, Title, Review, User
-from .permissions import IsAdmin, IsAdminOrReadOnly, IsAuthorOrAdminOrModeratorOrReadOnly
+from .models import Category, Genre, Title, Review
+from .permissions import (
+    IsAdmin, IsAdminOrReadOnly, IsAuthorOrAdminOrModeratorOrReadOnly
+)
 from .serializers import (
     CategorySerializer, GenreSerializer, TitleSerializer,
     CommentSerializer, ReviewSerializer,
@@ -36,14 +37,15 @@ class CreateListDestroyViewSet(mixins.CreateModelMixin,
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def user_auth_view(request):
-    if 'email' not in request.data or not request.data['email']:
-        return Response({"message": "email должен быть введен"}, status=status.HTTP_400_BAD_REQUEST)
     email = request.data['email']
     if User.objects.filter(email=email).exists():
-        return Response({"message": "такой email уже существует"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "такой email уже существует"},
+                        status=status.HTTP_400_BAD_REQUEST)
     password = get_random_string(length=20)
     username = str(email).split('@')[0]
-    user = User.objects.create_user(username=username, email=email, password=password)
+    user = User.objects.create_user(
+        username=username, email=email, password=password
+    )
     user.email_user(
         subject='Registration',
         message=f'confirmation_code: {password}',
@@ -54,19 +56,24 @@ def user_auth_view(request):
         status=status.HTTP_200_OK
     )
 
+
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def user_token_view(request):
     serializer = AuthSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    email = serializer.validated_data.get('email', None)
-    confirmation_code = serializer.validated_data.get('confirmation_code', None)
+    data = serializer.validated_data
+    email = data.get('email', None)
+    confirmation_code = data.get('confirmation_code', None)
+
     user = authenticate(email=email, password=confirmation_code)
     if not user:
-        return Response({"message": "The data is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "The data is incorrect"},
+                        status=status.HTTP_400_BAD_REQUEST)
 
     refresh = RefreshToken.for_user(user)
-    return Response({"token": str(refresh.access_token)}, status=status.HTTP_200_OK)
+    return Response({"token": str(refresh.access_token)},
+                    status=status.HTTP_200_OK)
 
 
 class UserViewSet(generics.RetrieveUpdateAPIView):
@@ -82,10 +89,9 @@ class UsersViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
     serializer_class = UserSerializer
     filter_backends = [SearchFilter]
-    search_fields = ['username',]
+    search_fields = ['username']
     pagination_class = PageNumberPagination
-    permission_classes = (permissions.IsAuthenticated,
-                          IsAdmin,)
+    permission_classes = [IsAdmin]
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
@@ -118,7 +124,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly & IsAuthorOrAdminOrModeratorOrReadOnly]
+    permission_classes = [IsAuthorOrAdminOrModeratorOrReadOnly]
 
     def perform_create(self, serializer):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
@@ -132,7 +138,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly & IsAuthorOrAdminOrModeratorOrReadOnly]
+    permission_classes = [IsAuthorOrAdminOrModeratorOrReadOnly]
 
     def get_review(self):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))

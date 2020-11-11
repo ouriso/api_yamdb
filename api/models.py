@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
-
+from django.db.models import Avg
 
 User = get_user_model()
 
@@ -64,7 +64,8 @@ class Review(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         reviews = self.title.reviews
-        new_rating = sum(review.score for review in reviews.all()) / reviews.count()
+        new_rating = reviews.aggregate(Avg('score'))['score__avg']
+
         self.title.rating = new_rating
         self.title.save(update_fields=['rating'])
 
