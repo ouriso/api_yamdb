@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
@@ -55,11 +56,16 @@ class TitleSerializer(serializers.ModelSerializer):
         queryset=Genre.objects.all(),
         many=True
     )
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
         fields = '__all__'
         read_only_fields = ('rating',)
+
+    def get_rating(self, obj):
+        rating = obj.reviews.aggregate(Avg('score'))['score__avg']
+        return rating
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -94,7 +100,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
         title = get_object_or_404(Title, pk=title_id)
         if Review.objects.filter(title=title, author=author).exists():
-            mes = ('Review from author {author.username} on title {title.name}'
+            mes = (f'Review from author {author.username} on title {title.name}'
                    '{title.year}) already exists')
             raise serializers.ValidationError(mes)
         return attrs

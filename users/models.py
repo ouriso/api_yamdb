@@ -46,7 +46,14 @@ class User(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     bio = models.TextField(max_length=500, blank=True)
     role = models.CharField(
-        max_length=9, choices=Roles.choices, default=Roles.USER
+        max_length=25, choices=Roles.choices, default=Roles.USER
     )
 
     objects = UserManager()
+
+    @property
+    def is_admin(self):
+        return self.role == 'admin' or self.is_superuser
+    @property
+    def is_moderator(self):
+        return self.role == 'moderator'

@@ -4,7 +4,7 @@ from django.utils.crypto import get_random_string
 
 from django_filters.rest_framework import DjangoFilterBackend
 
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from rest_framework import generics, mixins, permissions, status, viewsets
@@ -14,7 +14,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .filters import TitleFilter
-from .models import Category, Genre, Title, Review
+from .models import Category, Comment, Genre, Title, Review
 from .permissions import (
     IsAdmin, IsAdminOrReadOnly, IsAuthorOrAdminOrModeratorOrReadOnly
 )
@@ -49,7 +49,7 @@ def user_auth_view(request):
     user.email_user(
         subject='Registration',
         message=f'confirmation_code: {password}',
-        from_email='from@example.com'
+        # from_email='from@example.com'
     )
     return Response(
         {"message": "На ваш email направлен код подтверждения"},
@@ -76,14 +76,6 @@ def user_token_view(request):
                     status=status.HTTP_200_OK)
 
 
-class UserViewSet(generics.RetrieveUpdateAPIView):
-    serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_object(self):
-        return self.request.user
-
-
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('username')
     lookup_field = 'username'
@@ -92,6 +84,26 @@ class UsersViewSet(viewsets.ModelViewSet):
     search_fields = ['username']
     pagination_class = PageNumberPagination
     permission_classes = [IsAdmin]
+
+    @action(url_path='me', methods=['get', 'patch'], detail=False,
+            permission_classes = [permissions.IsAuthenticated])
+    def retrieve_update_user(self, request):
+        self.kwargs['username'] = request.user.username
+        if request.method == 'GET':
+            return self.retrieve(request)
+            # serializer = self.get_serializer(request.user)
+            # return Response(serializer.data, status=status.HTTP_200_OK)
+        if request.method == 'PATCH':
+            return self.update(request, partial=True)
+            # data = request.data
+            # if 'role' in data:
+            #     data.pop('role')
+            # serializer = self.get_serializer(
+            #     request.user, data=request.data, partial=True
+            # )
+            # serializer.is_valid(raise_exception=True)
+            # serializer.save()
+            # return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
@@ -124,7 +136,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [IsAuthorOrAdminOrModeratorOrReadOnly]
+    permission_classes = [IsAuthorOrAdminOrModeratorOrReadOnly,
+                          permissions.IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
@@ -138,13 +151,13 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [IsAuthorOrAdminOrModeratorOrReadOnly]
+    permission_classes = [IsAuthorOrAdminOrModeratorOrReadOnly,
+                          permissions.IsAuthenticatedOrReadOnly]
 
     def get_review(self):
-        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
-        review = get_object_or_404(
-            Review, title=title, pk=self.kwargs.get('review_id')
-        )
+        title_id=self.kwargs.get('title_id')
+        review_id=self.kwargs.get('review_id')
+        review = get_object_or_404(Review, pk=review_id, title__pk=title_id)
         return review
 
     def perform_create(self, serializer):
