@@ -94,7 +94,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
         title = get_object_or_404(Title, pk=title_id)
         if Review.objects.filter(title=title, author=author).exists():
-            mes = ('Review from author {author.username} on title {title.name}'
-                   '{title.year}) already exists')
+            mes = (f'Review from author {author.username} '
+                   f'on title {title.name} {title.year}) already exists')
             raise serializers.ValidationError(mes)
         return attrs
