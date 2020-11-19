@@ -1,7 +1,10 @@
-from django.contrib.auth import authenticate, get_user_model
+import uuid
+
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from django.utils.crypto import get_random_string
 
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -17,9 +20,10 @@ from .filters import TitleFilter
 from .models import Category, Genre, Review, Title
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAuthorOrAdminOrModeratorOrReadOnly)
-from .serializers import (
-    AuthSerializer, CategorySerializer, CommentSerializer, GenreSerializer,
-    ReviewSerializer, TitleSerializer, UserSerializer)
+from .serializers import (AuthSerializer,
+                          CategorySerializer, CommentSerializer,
+                          GenreSerializer, ReviewSerializer, TitleSerializer,
+                          UserSerializer)
 
 User = get_user_model()
 
@@ -34,21 +38,35 @@ class CreateListDestroyViewSet(mixins.CreateModelMixin,
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def user_auth_view(request):
+    if 'email' not in request.data:
+        return Response(
+            {'message': 'Поле email обязательно для заполнения'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
     email = request.data['email']
-    if User.objects.filter(email=email).exists():
-        return Response({"message": "такой email уже существует"},
-                        status=status.HTTP_400_BAD_REQUEST)
-    password = get_random_string(length=20)
+    try:
+        validate_email(email)
+    except ValidationError:
+        return Response(
+            {'message': 'Введен некорректный email'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    confirmation_code = uuid.uuid4()
     username = email
-    user = User.objects.create_user(
-        username=username, email=email, password=password
-    )
+    if User.objects.filter(email=email).exists():
+        user = User.objects.get(email=email)
+        user.confirmation_code = confirmation_code
+        user.save
+    else:
+        user = User.objects.create_user(
+            username=username, email=email, confirmation_code=confirmation_code
+        )
     user.email_user(
         subject='Registration',
-        message=f'confirmation_code: {password}',
+        message=f'Your confirmation_code: {confirmation_code}',
     )
     return Response(
-        {"message": "На ваш email направлен код подтверждения"},
+        {'message': 'На ваш email направлен код подтверждения'},
         status=status.HTTP_200_OK
     )
 
@@ -62,13 +80,15 @@ def user_token_view(request):
     email = data.get('email', None)
     confirmation_code = data.get('confirmation_code', None)
 
-    user = authenticate(email=email, password=confirmation_code)
-    if not user:
-        return Response({"message": "The data is incorrect"},
+    user = get_object_or_404(User, email=email)
+    if user.confirmation_code != confirmation_code:
+        return Response({'message': 'The data is incorrect'},
                         status=status.HTTP_400_BAD_REQUEST)
+    user.confirmation_code = None
+    user.save(['confirmation_code'])
 
     refresh = RefreshToken.for_user(user)
-    return Response({"token": str(refresh.access_token)},
+    return Response({'token': str(refresh.access_token)},
                     status=status.HTTP_200_OK)
 
 
@@ -121,8 +141,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [IsAuthorOrAdminOrModeratorOrReadOnly,
-                          permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthorOrAdminOrModeratorOrReadOnly]
 
     def perform_create(self, serializer):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
@@ -136,8 +155,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [IsAuthorOrAdminOrModeratorOrReadOnly,
-                          permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthorOrAdminOrModeratorOrReadOnly]
 
     def get_review(self):
         title_id = self.kwargs.get('title_id')

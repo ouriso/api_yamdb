@@ -29,7 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
 class AuthSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True, write_only=True)
     confirmation_code = serializers.CharField(
-        required=True, max_length=20, write_only=True
+        required=True, max_length=36, write_only=True
     )
 
 
