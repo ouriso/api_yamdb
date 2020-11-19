@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import Avg
 
 User = get_user_model()
 
@@ -39,8 +38,8 @@ class Title(models.Model):
     category = models.ForeignKey(Category, on_delete=models.PROTECT,
                                  related_name="titles")
 
-    class Meta:
-        ordering = ('-year', '-name',)
+    # class Meta:
+    #     ordering = ('-year',)
 
 
 class Review(models.Model):
