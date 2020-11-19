@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+
 from rest_framework import serializers
 
 from .models import Category, Comment, Genre, Review, Title
@@ -12,12 +13,20 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('first_name', 'last_name',
                   'username', 'bio', 'role', 'email')
+        read_only_fields = ("role", "email")
+
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name',
+                  'username', 'bio', 'role', 'email')
 
 
 class AuthSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True, write_only=True)
     confirmation_code = serializers.CharField(
-        required=True, max_length=20, write_only=True
+        required=True, max_length=36, write_only=True
     )
 
 

@@ -4,6 +4,7 @@ from django.contrib.auth.admin import UserAdmin
 
 User = get_user_model()
 
+
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     pass
