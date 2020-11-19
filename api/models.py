@@ -6,27 +6,21 @@ User = get_user_model()
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=80, unique=True)
+    name = models.CharField(max_length=80, unique=True, db_index=True)
     slug = models.SlugField(unique=True)
 
     class Meta:
         unique_together = ('name', 'slug')
         ordering = ('-name',)
-        indexes = [
-            models.Index(fields=['name',],)
-        ]
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=80, unique=True)
+    name = models.CharField(max_length=80, unique=True, db_index=True)
     slug = models.SlugField(unique=True)
 
     class Meta:
         unique_together = ('name', 'slug')
         ordering = ('-name',)
-        indexes = [
-            models.Index(fields=['name',],)
-        ]
 
 
 class Title(models.Model):
