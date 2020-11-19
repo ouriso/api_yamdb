@@ -30,16 +30,12 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, db_index=True)
     year = models.PositiveIntegerField()
     description = models.TextField(blank=True, null=True, default='')
-    # rating = models.FloatField(blank=True, null=True)
     genre = models.ManyToManyField(Genre, blank=True, related_name="titles")
     category = models.ForeignKey(Category, on_delete=models.PROTECT,
-                                 related_name="titles")
-
-    # class Meta:
-    #     ordering = ('-year',)
+                                 related_name="titles", db_index=True)
 
 
 class Review(models.Model):
