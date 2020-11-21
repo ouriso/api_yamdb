@@ -49,6 +49,10 @@ class User(AbstractUser):
         max_length=25, choices=Roles.choices, default=Roles.USER
     )
     confirmation_code = models.CharField(max_length=36, blank=True, null=True)
+    confirmation_code_active = models.BooleanField(
+        default=False,
+        help_text='If True you can use this code to get the token'
+    )
 
     @property
     def is_admin(self):
