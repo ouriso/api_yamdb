@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import mixins, permissions, status, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -35,61 +35,53 @@ class CreateListDestroyViewSet(mixins.CreateModelMixin,
     pass
 
 
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def user_auth_view(request):
-    if 'email' not in request.data:
-        return Response(
-            {'message': 'Поле email обязательно для заполнения'},
-            status=status.HTTP_400_BAD_REQUEST
+class UserAuthView(viewsets.ViewSet):
+    permission_classes = [permissions.AllowAny]
+
+    @action(url_path='email', methods=['post'], detail=False)
+    def user_auth_view(self, request):
+        email = request.data.get('email', None)
+        try:
+            validate_email(email)
+        except ValidationError:
+            return Response(
+                {"message": "Поле 'email' отсутствует либо некорректно"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user, created = User.objects.get_or_create(
+            email=email, username=email
         )
-    email = request.data['email']
-    try:
-        validate_email(email)
-    except ValidationError:
-        return Response(
-            {'message': 'Введен некорректный email'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    confirmation_code = uuid.uuid4()
-    username = email
-    if User.objects.filter(email=email).exists():
-        user = User.objects.get(email=email)
+        confirmation_code = uuid.uuid4()
         user.confirmation_code = confirmation_code
-        user.save
-    else:
-        user = User.objects.create_user(
-            username=username, email=email, confirmation_code=confirmation_code
+        user.confirmation_code_active = True
+        user.save()
+        user.email_user(
+            subject='Registration',
+            message=f'Your confirmation_code: {confirmation_code}',
         )
-    user.email_user(
-        subject='Registration',
-        message=f'Your confirmation_code: {confirmation_code}',
-    )
-    return Response(
-        {'message': 'На ваш email направлен код подтверждения'},
-        status=status.HTTP_200_OK
-    )
+        return Response(
+            {"message": "На ваш email направлен код подтверждения"},
+            status=status.HTTP_200_OK
+        )
 
+    @action(url_path='token', methods=['post'], detail=False)
+    def user_token_view(self, request):
+        serializer = AuthSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        email = data.get('email', None)
+        confirmation_code = data.get('confirmation_code', None)
 
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def user_token_view(request):
-    serializer = AuthSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    data = serializer.validated_data
-    email = data.get('email', None)
-    confirmation_code = data.get('confirmation_code', None)
-
-    user = get_object_or_404(User, email=email)
-    if user.confirmation_code != confirmation_code:
-        return Response({'message': 'The data is incorrect'},
-                        status=status.HTTP_400_BAD_REQUEST)
-    user.confirmation_code = None
-    user.save(['confirmation_code'])
-
-    refresh = RefreshToken.for_user(user)
-    return Response({'token': str(refresh.access_token)},
-                    status=status.HTTP_200_OK)
+        user = get_object_or_404(User, email=email)
+        if not user.confirmation_code_active or \
+           user.confirmation_code != confirmation_code:
+            return Response({"message": "Код недействителен или некорректен"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        user.confirmation_code_active = False
+        user.save()
+        refresh = RefreshToken.for_user(user)
+        return Response({"token": str(refresh.access_token)},
+                        status=status.HTTP_200_OK)
 
 
 class UsersViewSet(viewsets.ModelViewSet):
