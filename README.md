@@ -23,7 +23,7 @@
 
 **Произведения** - `/titles/`, `/titles/<title_id>/`  
 **Оценка** - `/titles/<title_id>/review/`, `/titles/<title_id>/review/<review_id>/`  
-**Комментарии** - `/titles/<title_id>/review/<review_id>/comment/`, `/titles/<title_id>/review/<review_id>/comment/<comment_id>/`  
+**Комментарии** - `/titles/<title_id>/review/<review_id>/comments/`, `/titles/<title_id>/review/<review_id>/comments/<comment_id>/`  
 **Категории** - `/cathegories/`  
 **Произведениям** - `/genres/`  
 
